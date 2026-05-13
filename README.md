@@ -36,9 +36,14 @@ PromptWise acts as an AI coach that helps users:
 Evaluate prompts based on:
 - clarity
 - context
-- specificity
 - structure
 - safety
+
+The current prototype uses a deterministic rule-based scoring engine in `lib/prompt-scoring.ts`. It scores prompts out of 100 across four weighted categories:
+- clarity: 30 points
+- context: 25 points
+- structure: 25 points
+- safety: 20 points
 
 ### AI Coaching
 
@@ -105,7 +110,7 @@ Keep the post under 1200 characters and end with a soft call-to-action.
 
 ## Tech Stack
 
-- Next.js
+- Next.js 15
 - TypeScript
 - Tailwind CSS
 - shadcn/ui
@@ -193,6 +198,29 @@ Built for real-world organizational use cases, not just demos.
 ## Status
 
 Early prototype / active development.
+
+---
+
+## Development
+
+PromptWise is now scaffolded as a Next.js 15 App Router project with TypeScript, Tailwind CSS, shadcn/ui conventions, responsive layout and dark mode.
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+### Project Structure
+
+```txt
+app/                    App Router routes, layout and global styles
+components/layout/      Shared layout components
+components/prompt/      PromptWise workspace and prompt coaching UI
+components/ui/          shadcn/ui-compatible primitives
+lib/                    Shared utilities
+```
 
 ---
 
