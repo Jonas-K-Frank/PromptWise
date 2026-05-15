@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  CheckCircle2,
   Clipboard,
   FileText,
   Gauge,
@@ -14,7 +13,9 @@ import {
   WandSparkles
 } from "lucide-react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { PromptStatusBanner } from "@/components/prompt/prompt-status-banner";
 import { ScoreCategoryPanel } from "@/components/prompt/score-category-panel";
+import { ScoreComparison } from "@/components/prompt/score-comparison";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,48 +85,6 @@ Safety:
 Do not include private, confidential or personally identifiable information unless it has been anonymized.`;
 }
 
-function getChangeNotes(
-  analysis: ReturnType<typeof scorePrompt>,
-  mode: PromptMode
-) {
-  const activeMode =
-    promptModes.find((item) => item.id === mode) ?? promptModes[0];
-  const weakCategories = analysis.categories
-    .filter((category) => category.status !== "Strong")
-    .map((category) => category.label.toLowerCase());
-
-  const notes = [
-    {
-      title: "Original intent preserved",
-      description:
-        "The user request stays as the task, so the rewrite improves the prompt without changing the underlying ask."
-    },
-    {
-      title: "Role added",
-      description: `The prompt now tells the AI to respond as a ${activeMode.role}.`
-    },
-    {
-      title: "Structure added",
-      description:
-        "The rewrite separates task, context, focus, output and safety into clear sections."
-    },
-    {
-      title: "Safety boundary added",
-      description:
-        "The improved prompt tells the AI to avoid private, confidential or identifiable information unless it is anonymized."
-    }
-  ];
-
-  if (weakCategories.length > 0) {
-    notes.splice(3, 0, {
-      title: "Weak signals highlighted",
-      description: `The rewrite adds placeholders for ${weakCategories.join(", ")} so the user can fill in missing details.`
-    });
-  }
-
-  return notes;
-}
-
 export function PromptWorkspace() {
   const [prompt, setPrompt] = React.useState(starterPrompt);
   const [mode, setMode] = React.useState<PromptMode>("business");
@@ -136,9 +95,9 @@ export function PromptWorkspace() {
     () => rewritePrompt(prompt, mode),
     [prompt, mode]
   );
-  const changeNotes = React.useMemo(
-    () => getChangeNotes(analysis, mode),
-    [analysis, mode]
+  const improvedAnalysis = React.useMemo(
+    () => scorePrompt(improvedPrompt),
+    [improvedPrompt]
   );
 
   const clarityScore = analysis.categories.find(
@@ -253,6 +212,8 @@ export function PromptWorkspace() {
                 </Card>
               ))}
             </section>
+
+            <PromptStatusBanner analysis={analysis} />
 
             <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_420px]">
               <div className="space-y-6">
@@ -385,6 +346,8 @@ export function PromptWorkspace() {
                   </CardContent>
                 </Card>
 
+                <ScoreComparison original={analysis} improved={improvedAnalysis} />
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Governance notes</CardTitle>
@@ -415,46 +378,6 @@ export function PromptWorkspace() {
                   </CardContent>
                 </Card>
               </div>
-            </section>
-
-            <section className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold tracking-normal">
-                  Review details
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Explanation and governance guidance for the current prompt.
-                </p>
-              </div>
-
-              <Card>
-                <CardHeader className="border-b">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <CheckCircle2
-                      className="size-5 text-primary"
-                      aria-hidden="true"
-                    />
-                    What changed?
-                  </CardTitle>
-                  <CardDescription>
-                    A deterministic explanation of how the rewrite improves
-                    the prompt.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
-                  {changeNotes.map((note) => (
-                    <div
-                      className="rounded-lg border bg-background p-4"
-                      key={note.title}
-                    >
-                      <p className="text-sm font-medium">{note.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {note.description}
-                      </p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
             </section>
           </div>
         </main>

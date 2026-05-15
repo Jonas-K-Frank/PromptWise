@@ -36,6 +36,71 @@ export type PromptScoreResult = {
   detectedRisks: string[];
 };
 
+export type PromptStatusLevel = {
+  label: string;
+  description: string;
+};
+
+export type PromptMaturityLevel = {
+  label: string;
+  description: string;
+};
+
+const statusLevels: Array<PromptStatusLevel & { min: number; max: number }> = [
+  {
+    label: "Needs Review",
+    description: "Missing critical elements. Define the task, audience and desired output before use.",
+    min: 0,
+    max: 30
+  },
+  {
+    label: "Basic Prompt",
+    description: "Minimal structure in place. Add context and output guidance to improve reliability.",
+    min: 31,
+    max: 55
+  },
+  {
+    label: "Structured Prompt",
+    description: "Key elements present. Tighten constraints and success criteria for consistent results.",
+    min: 56,
+    max: 75
+  },
+  {
+    label: "High Quality Prompt",
+    description: "Well-formed and contextual. Minor refinements will push this to enterprise standard.",
+    min: 76,
+    max: 89
+  },
+  {
+    label: "Enterprise Ready",
+    description: "Meets enterprise quality standards. Governed, clear and safe for production use.",
+    min: 90,
+    max: 100
+  }
+];
+
+const maturityLevels: Array<PromptMaturityLevel & { min: number; max: number }> = [
+  { label: "Ad-hoc", description: "Unstructured, improvised prompting.", min: 0, max: 30 },
+  { label: "Guided", description: "Following basic prompting practices.", min: 31, max: 55 },
+  { label: "Structured", description: "Applying consistent prompt structure.", min: 56, max: 75 },
+  { label: "Operational", description: "Prompts aligned with workflows and policies.", min: 76, max: 89 },
+  { label: "Enterprise", description: "Governed, reusable and auditable.", min: 90, max: 100 }
+];
+
+export function getPromptStatus(score: number): PromptStatusLevel {
+  return (
+    statusLevels.find((level) => score >= level.min && score <= level.max) ??
+    statusLevels[0]
+  );
+}
+
+export function getPromptMaturity(score: number): PromptMaturityLevel {
+  return (
+    maturityLevels.find((level) => score >= level.min && score <= level.max) ??
+    maturityLevels[0]
+  );
+}
+
 const sensitivePatterns = [
   {
     label: "credential or secret",
