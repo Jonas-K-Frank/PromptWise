@@ -30,13 +30,21 @@ function getImprovements(
 interface ScoreComparisonProps {
   original: PromptScoreResult;
   improved: PromptScoreResult;
+  improvementsAdded?: string[];
 }
 
-export function ScoreComparison({ original, improved }: ScoreComparisonProps) {
+export function ScoreComparison({
+  original,
+  improved,
+  improvementsAdded
+}: ScoreComparisonProps) {
   const delta = improved.totalScore - original.totalScore;
   const originalStatus = getPromptStatus(original.totalScore);
   const improvedStatus = getPromptStatus(improved.totalScore);
-  const improvements = getImprovements(original, improved);
+
+  const computedImprovements = getImprovements(original, improved);
+  const improvementLabels =
+    improvementsAdded ?? computedImprovements.map((r) => r.label);
 
   return (
     <Card>
@@ -81,17 +89,17 @@ export function ScoreComparison({ original, improved }: ScoreComparisonProps) {
           </div>
         </div>
 
-        {improvements.length > 0 && (
+        {improvementLabels.length > 0 && (
           <div className="border-t pt-4">
             <p className="mb-3 text-sm font-medium">Improvements added</p>
             <ul className="space-y-2">
-              {improvements.map((rule) => (
-                <li className="flex items-center gap-2.5 text-sm" key={rule.id}>
+              {improvementLabels.map((label) => (
+                <li className="flex items-center gap-2.5 text-sm" key={label}>
                   <Check
                     aria-hidden="true"
                     className="size-3.5 shrink-0 text-primary"
                   />
-                  {rule.label}
+                  {label}
                 </li>
               ))}
             </ul>
