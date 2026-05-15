@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -82,7 +81,7 @@ export function AppSidebar() {
             <ClipboardList className="size-4" aria-hidden="true" />
             SOC2 policy set
           </div>
-          <ThemeToggle />
+          <Badge variant="outline">Active</Badge>
         </div>
       </div>
     </aside>

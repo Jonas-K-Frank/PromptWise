@@ -84,16 +84,46 @@ Safety:
 Do not include private, confidential or personally identifiable information unless it has been anonymized.`;
 }
 
-function scoreLabel(score: number) {
-  if (score >= 80) {
-    return "Ready";
+function getChangeNotes(
+  analysis: ReturnType<typeof scorePrompt>,
+  mode: PromptMode
+) {
+  const activeMode =
+    promptModes.find((item) => item.id === mode) ?? promptModes[0];
+  const weakCategories = analysis.categories
+    .filter((category) => category.status !== "Strong")
+    .map((category) => category.label.toLowerCase());
+
+  const notes = [
+    {
+      title: "Original intent preserved",
+      description:
+        "The user request stays as the task, so the rewrite improves the prompt without changing the underlying ask."
+    },
+    {
+      title: "Role added",
+      description: `The prompt now tells the AI to respond as a ${activeMode.role}.`
+    },
+    {
+      title: "Structure added",
+      description:
+        "The rewrite separates task, context, focus, output and safety into clear sections."
+    },
+    {
+      title: "Safety boundary added",
+      description:
+        "The improved prompt tells the AI to avoid private, confidential or identifiable information unless it is anonymized."
+    }
+  ];
+
+  if (weakCategories.length > 0) {
+    notes.splice(3, 0, {
+      title: "Weak signals highlighted",
+      description: `The rewrite adds placeholders for ${weakCategories.join(", ")} so the user can fill in missing details.`
+    });
   }
 
-  if (score >= 60) {
-    return "Needs review";
-  }
-
-  return "Incomplete";
+  return notes;
 }
 
 export function PromptWorkspace() {
@@ -105,6 +135,10 @@ export function PromptWorkspace() {
   const improvedPrompt = React.useMemo(
     () => rewritePrompt(prompt, mode),
     [prompt, mode]
+  );
+  const changeNotes = React.useMemo(
+    () => getChangeNotes(analysis, mode),
+    [analysis, mode]
   );
 
   const clarityScore = analysis.categories.find(
@@ -191,9 +225,7 @@ export function PromptWorkspace() {
                   <ShieldAlert className="size-3.5" aria-hidden="true" />
                   Enterprise policy: Standard
                 </Badge>
-                <div className="md:hidden">
-                  <ThemeToggle />
-                </div>
+                <ThemeToggle />
               </div>
             </div>
           </header>
@@ -222,90 +254,120 @@ export function PromptWorkspace() {
               ))}
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-              <Card>
-                <CardHeader className="border-b">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Sparkles className="size-5 text-primary" aria-hidden="true" />
-                        Prompt intake
-                      </CardTitle>
-                      <CardDescription>
-                        Add the original prompt and select the operating context.
-                      </CardDescription>
+            <section className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_420px]">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader className="border-b">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                          <Sparkles className="size-5 text-primary" aria-hidden="true" />
+                          Prompt intake
+                        </CardTitle>
+                        <CardDescription>
+                          Add the original prompt and select the operating context.
+                        </CardDescription>
+                      </div>
+                      <Badge
+                        variant={analysis.riskCount ? "destructive" : "secondary"}
+                      >
+                        {analysis.riskCount ? "Review safety" : "No obvious data risk"}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant={analysis.riskCount ? "destructive" : "secondary"}
+                  </CardHeader>
+                  <CardContent className="space-y-5 p-4 sm:p-6">
+                    <div
+                      aria-label="Prompt mode"
+                      className="grid grid-cols-2 gap-2 rounded-lg border bg-background p-1 lg:grid-cols-4"
+                      role="tablist"
                     >
-                      {analysis.riskCount ? "Review safety" : "No obvious data risk"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-5 p-4 sm:p-6">
-                  <div
-                    aria-label="Prompt mode"
-                    className="grid grid-cols-2 gap-2 rounded-lg border bg-background p-1 lg:grid-cols-4"
-                    role="tablist"
-                  >
-                    {promptModes.map((item) => (
-                      <Button
-                        aria-selected={mode === item.id}
-                        className="w-full"
-                        key={item.id}
-                        onClick={() => setMode(item.id)}
-                        role="tab"
-                        size="sm"
-                        type="button"
-                        variant={mode === item.id ? "default" : "ghost"}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium" htmlFor="prompt">
-                      Original prompt
-                    </label>
-                    <Textarea
-                      className="min-h-[300px] resize-y bg-background"
-                      id="prompt"
-                      minLength={1}
-                      onChange={(event) => setPrompt(event.target.value)}
-                      placeholder="Paste or write a prompt to coach..."
-                      value={prompt}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      {analysis.wordCount} words · {analysis.passedRules} of{" "}
-                      {analysis.totalRules} rules passed
+                      {promptModes.map((item) => (
+                        <Button
+                          aria-selected={mode === item.id}
+                          className="w-full"
+                          key={item.id}
+                          onClick={() => setMode(item.id)}
+                          role="tab"
+                          size="sm"
+                          type="button"
+                          variant={mode === item.id ? "default" : "ghost"}
+                        >
+                          {item.label}
+                        </Button>
+                      ))}
                     </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <Button
-                        className="gap-2"
-                        onClick={() => setPrompt("")}
-                        type="button"
-                        variant="outline"
-                      >
-                        <RefreshCw className="size-4" aria-hidden="true" />
-                        Reset
-                      </Button>
-                      <Button
-                        className="gap-2"
-                        onClick={() => setPrompt(starterPrompt)}
-                        type="button"
-                        variant="secondary"
-                      >
-                        <FileText className="size-4" aria-hidden="true" />
-                        Load example
-                      </Button>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium" htmlFor="prompt">
+                        Original prompt
+                      </label>
+                      <Textarea
+                        className="min-h-[300px] resize-y bg-background"
+                        id="prompt"
+                        minLength={1}
+                        onChange={(event) => setPrompt(event.target.value)}
+                        placeholder="Paste or write a prompt to coach..."
+                        value={prompt}
+                      />
                     </div>
+
+                    <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        {analysis.wordCount} words · {analysis.passedRules} of{" "}
+                        {analysis.totalRules} rules passed
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          className="gap-2"
+                          onClick={() => setPrompt("")}
+                          type="button"
+                          variant="outline"
+                        >
+                          <RefreshCw className="size-4" aria-hidden="true" />
+                          Reset
+                        </Button>
+                        <Button
+                          className="gap-2"
+                          onClick={() => setPrompt(starterPrompt)}
+                          type="button"
+                          variant="secondary"
+                        >
+                          <FileText className="size-4" aria-hidden="true" />
+                          Load example
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="rounded-lg border bg-background">
+                  <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h2 className="flex items-center gap-2 text-lg font-semibold tracking-normal">
+                        <Target
+                          className="size-5 text-accent"
+                          aria-hidden="true"
+                        />
+                        Improved prompt
+                      </h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Structured rewrite with role, context, output and safety.
+                      </p>
+                    </div>
+                    <Button
+                      className="gap-2"
+                      onClick={copyImprovedPrompt}
+                      type="button"
+                    >
+                      <Clipboard className="size-4" aria-hidden="true" />
+                      {copied ? "Copied" : "Copy improved prompt"}
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                  <pre className="max-h-[420px] overflow-auto p-4 text-sm leading-6 text-foreground sm:p-6">
+                    <code>{improvedPrompt}</code>
+                  </pre>
+                </div>
+              </div>
 
               <div className="space-y-6">
                 <Card>
@@ -397,75 +459,42 @@ export function PromptWorkspace() {
               </div>
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold tracking-normal">
+                  Review details
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Explanation and governance guidance for the current prompt.
+                </p>
+              </div>
+
               <Card>
                 <CardHeader className="border-b">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Target className="size-5 text-accent" aria-hidden="true" />
-                        Improved prompt
-                      </CardTitle>
-                      <CardDescription>
-                        Structured output with role, context, constraints and safety.
-                      </CardDescription>
-                    </div>
-                    <Button
-                      className="gap-2"
-                      onClick={copyImprovedPrompt}
-                      type="button"
-                    >
-                      <Clipboard className="size-4" aria-hidden="true" />
-                      {copied ? "Copied" : "Copy"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <pre className="max-h-[520px] overflow-auto bg-background p-4 text-sm leading-6 text-foreground sm:p-6">
-                    <code>{improvedPrompt}</code>
-                  </pre>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Result summary</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <CheckCircle2
+                      className="size-5 text-primary"
+                      aria-hidden="true"
+                    />
+                    What changed?
+                  </CardTitle>
                   <CardDescription>
-                    Readiness snapshot for review and approval workflows.
+                    A deterministic explanation of how the rewrite improves
+                    the prompt.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-lg border bg-background p-4">
-                    <p className="text-sm font-medium">Decision</p>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <span className="text-2xl font-semibold tracking-normal">
-                        {scoreLabel(analysis.totalScore)}
-                      </span>
-                      <Badge
-                        variant={
-                          analysis.totalScore >= 80 ? "default" : "secondary"
-                        }
-                      >
-                        {analysis.totalScore}/{analysis.maxScore}
-                      </Badge>
+                <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
+                  {changeNotes.map((note) => (
+                    <div
+                      className="rounded-lg border bg-background p-4"
+                      key={note.title}
+                    >
+                      <p className="text-sm font-medium">{note.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {note.description}
+                      </p>
                     </div>
-                  </div>
-
-                  <div className="rounded-lg border bg-background p-4">
-                    <p className="text-sm font-medium">Policy status</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {analysis.riskCount
-                        ? `Detected: ${analysis.detectedRisks.join(", ")}. Remove or anonymize before approval.`
-                        : "No obvious secrets, credentials or personal identifiers detected."}
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border bg-background p-4">
-                    <p className="text-sm font-medium">Next best action</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {analysis.recommendations[0]}
-                    </p>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
             </section>
