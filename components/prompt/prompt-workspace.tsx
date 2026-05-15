@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  AlertTriangle,
   CheckCircle2,
   Clipboard,
   FileText,
@@ -15,6 +14,7 @@ import {
   WandSparkles
 } from "lucide-react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { ScoreCategoryPanel } from "@/components/prompt/score-category-panel";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -374,56 +374,14 @@ export function PromptWorkspace() {
                   <CardHeader>
                     <CardTitle className="text-lg">Quality signals</CardTitle>
                     <CardDescription>
-                      Required elements for reliable enterprise prompts.
+                      Click a category to see passed checks, missing elements and
+                      suggestions.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {analysis.categories.map((category) => {
-                      const passedRules = category.rules.filter(
-                        (rule) => rule.passed
-                      ).length;
-
-                      return (
-                        <div
-                          className="rounded-md border bg-background px-3 py-3"
-                          key={category.id}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-medium">
-                                {category.label}
-                              </p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {passedRules} of {category.rules.length} rules
-                                passed
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant={
-                                  category.status === "Strong"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {category.score}/{category.maxScore}
-                              </Badge>
-                              {category.status === "Strong" ? (
-                                <CheckCircle2
-                                  className="size-4 text-primary"
-                                  aria-label="Strong"
-                                />
-                              ) : (
-                                <AlertTriangle
-                                  className="size-4 text-accent"
-                                  aria-label="Needs review"
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <CardContent className="p-0">
+                    {analysis.categories.map((category) => (
+                      <ScoreCategoryPanel category={category} key={category.id} />
+                    ))}
                   </CardContent>
                 </Card>
 

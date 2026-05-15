@@ -20,6 +20,7 @@ export type PromptCategoryScore = {
   maxScore: number;
   status: "Strong" | "Needs review" | "Weak";
   rules: PromptRuleResult[];
+  whyMatters: string;
 };
 
 export type PromptScoreResult = {
@@ -89,6 +90,17 @@ function createRule(
   };
 }
 
+const categoryWhyMatters: Record<PromptScoreCategoryId, string> = {
+  clarity:
+    "A clear prompt produces a focused, useful answer. Vague or broad requests lead to generic output that requires multiple revision rounds.",
+  context:
+    "AI produces better results when it understands who the output is for, what the goal is, and how the answer will be used. Missing context leads to assumptions that may not match your needs.",
+  structure:
+    "Well-structured prompts set explicit expectations for format, length and quality. Without structure, the model chooses its own format, which may not fit your workflow.",
+  safety:
+    "Enterprise prompts can inadvertently include sensitive data. Detecting and removing credentials, personal data or confidential details before submission protects your organisation and its customers."
+};
+
 function toCategory(
   id: PromptScoreCategoryId,
   label: string,
@@ -104,7 +116,8 @@ function toCategory(
     score,
     maxScore,
     status: ratio >= 0.8 ? "Strong" : ratio >= 0.5 ? "Needs review" : "Weak",
-    rules
+    rules,
+    whyMatters: categoryWhyMatters[id]
   };
 }
 
